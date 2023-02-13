@@ -1,0 +1,3 @@
+/home/addo/klaplace/CMakeFiles/rebuild_cache.dir
+/home/addo/klaplace/CMakeFiles/edit_cache.dir
+/home/addo/klaplace/CMakeFiles/klaplace.dir
