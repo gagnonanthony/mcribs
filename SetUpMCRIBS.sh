@@ -1,0 +1,5 @@
+export MCRIBS_HOME=`dirname $BASH_SOURCE`
+echo "MCRIBS_HOME set to $MCRIBS_HOME"
+
+export PATH=${MCRIBS_HOME}/bin:$PATH
+export PYTHONPATH=${MCRIBS_HOME}/lib/python:$PYTHONPATH
