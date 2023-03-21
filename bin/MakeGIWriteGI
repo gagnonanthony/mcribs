@@ -76,7 +76,7 @@ structsAndLabels = pandas.Series(index = Annot['colortable']['struct_names'], da
 print("structsAndLabels?")
 print(structsAndLabels)
 
-for curStructIDX in list(range(34)):
+for curStructIDX in list(range(35)):
     print("curStructIDX")
     print(curStructIDX)
     curStructName = outDF.loc[curStructIDX, 'StructName']
@@ -95,8 +95,8 @@ for curStructIDX in list(range(34)):
 print("Cortex Label")
 print(CortexLabel)
 
-outDF.loc['Global', 'SurfArea'] = numpy.sum(PialVertexAreas[CortexLabel[index]])
-outDF.loc['Global', 'OuterSurfArea'] = numpy.sum(OuterVertexAreas[CortexLabel[index]])
+outDF.loc['Global', 'SurfArea'] = numpy.sum(PialVertexAreas[CortexLabel['index']])
+outDF.loc['Global', 'OuterSurfArea'] = numpy.sum(OuterVertexAreas[CortexLabel['index']])
 outDF.loc['Global', 'LGI'] = outDF.loc['Global', 'SurfArea'] / outDF.loc['Global', 'OuterSurfArea']
 
 outDF.to_csv(os.path.join(SubjectsDir, subjID, 'stats', Hemi + "." + Atlas + ".lgi.stats"), index = False)
