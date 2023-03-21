@@ -28,7 +28,7 @@ then
 		#run fslmaths $rdir/${subj}_${h}_dist.nii.gz -uthr 0 -abs -bin -mul $tissues -thr 2 -bin $rdir/${subj}_${h}_outerpial.nii.gz
 		$HOME/klaplace/klaplace -dims 100 $SURFDIR/meshes/pial-$HEMI-reordered.vtp $SURFDIR/meshes/pial-$HEMI-reordered-hull.vtp -surfaceCorrespondence $SURFDIR/meshes/correspondence-$HEMI-reordered.vtp -thread `nproc`
 		#rm -f $SURFDIR/meshes/pial-$HEMI-hull-implicit-inside.nii.gz
-		MakeGIWriteGI $1 $HEMI aparc+DKTatlas.manual
+		MakeGIWriteGI $1 $HEMI aparc+DKTatlas
 	done
 fi
 HEMI=lh
