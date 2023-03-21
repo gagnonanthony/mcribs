@@ -30,6 +30,8 @@ OuterSurf = VTPUtils.readVTPSurf(os.path.join(inDir, 'meshes', 'correspondence-'
 AnnotFileName = os.path.join(SubjectsDir, subjID, 'label', Hemi + "." + Atlas + ".annot")
 Annot = freesurfer.readAnnot(AnnotFileName)
 
+print(Annot)
+
 CortexLabel = freesurfer.readLabel(os.path.join(SubjectsDir, subjID, 'label', Hemi + ".cortex.label"))
 
 PialFaceNormals, PialFaceAreas, PialVertexNormals, PialVertexAreas = GraphUtils.surfaceAreasNormals(PialSurf)
@@ -43,6 +45,7 @@ outDF = outDF[outDF.StructName != 'unknown']
 
 pd = pandas.DataFrame(columns = outDF.columns)
 pd['StructName'] = pandas.Series('Global')
+print(pd)
 pd = dict.fromkeys(outDF.columns.names, numpy.nan)
 
 outDF = outDF.append(pd, ignore_index = True)
