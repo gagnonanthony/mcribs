@@ -65,7 +65,7 @@ print(outDF.columns.names)
 print("pd after initialization, assignment, and conversion")
 print(pd)
 
-outDF = outDF.append(pd, ignore_index = True)
+#outDF = outDF.append(pd, ignore_index = True)
 
 print("outDF with pd appended (the < error line)")
 print(outDF)
