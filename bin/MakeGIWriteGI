@@ -52,12 +52,20 @@ print(outDF)
 
 pd = pandas.DataFrame(columns = outDF.columns)
 pd['StructName'] = pandas.Series('Global')
-#print(pd)
 pd = dict.fromkeys(outDF.columns.names, numpy.nan)
+
+print("pd after initialization, assignment, and conversion")
+print(pd)
 
 outDF = outDF.append(pd, ignore_index = True)
 
+print("outDF with pd appended (the < error line)")
+print(outDF)
+
 structsAndLabels = pandas.Series(index = Annot['colortable']['struct_names'], data = Annot['colortable']['labels'])
+
+print("structsAndLabels?")
+print(structsAndLabels)
 
 for curStructIDX in outDF.index:
     curStructName = outDF.loc[curStructIDX, 'StructName']
