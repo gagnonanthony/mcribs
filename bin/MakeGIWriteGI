@@ -92,12 +92,8 @@ for curStructIDX in list(range(34)):
     outDF.loc[curStructIDX, 'OuterSurfArea'] = numpy.sum(OuterVertexAreas[I])
     outDF.loc[curStructIDX, 'LGI'] = outDF.loc[curStructIDX, 'SurfArea'] / outDF.loc[curStructIDX, 'OuterSurfArea']
     
-print("Cortex Label[0]")
-print(CortexLabel[0])
-print("Cortex Label[1]")
-print(CortexLabel[1])
-print("Cortex Label[:]")
-print(CortexLabel[:])
+print("Cortex Label")
+print(CortexLabel)
 
 outDF.loc['Global', 'SurfArea'] = numpy.sum(PialVertexAreas[CortexLabel[index]])
 outDF.loc['Global', 'OuterSurfArea'] = numpy.sum(OuterVertexAreas[CortexLabel[index]])
