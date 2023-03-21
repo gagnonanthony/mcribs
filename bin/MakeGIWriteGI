@@ -76,7 +76,7 @@ structsAndLabels = pandas.Series(index = Annot['colortable']['struct_names'], da
 print("structsAndLabels?")
 print(structsAndLabels)
 
-for curStructIDX in outDF.index:
+for curStructIDX in list(range(34)):
     print("curStructIDX")
     print(curStructIDX)
     curStructName = outDF.loc[curStructIDX, 'StructName']
