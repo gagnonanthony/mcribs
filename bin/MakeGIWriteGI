@@ -58,7 +58,7 @@ print(pd)
 pd['StructName'] = pandas.Series('Global')
 print("pd after reassignment of structname to global")
 print(pd)
-pd = dict.fromkeys(outDF.columns.names, numpy.nan)
+pd = dict.fromkeys(outDF.columns.values, numpy.nan)
 print("names of outDF columns?")
 print(outDF.columns.names)
 
