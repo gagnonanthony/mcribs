@@ -30,6 +30,7 @@ OuterSurf = VTPUtils.readVTPSurf(os.path.join(inDir, 'meshes', 'correspondence-'
 AnnotFileName = os.path.join(SubjectsDir, subjID, 'label', Hemi + "." + Atlas + ".annot")
 Annot = freesurfer.readAnnot(AnnotFileName)
 
+print("Annot:")
 print(Annot)
 
 CortexLabel = freesurfer.readLabel(os.path.join(SubjectsDir, subjID, 'label', Hemi + ".cortex.label"))
@@ -40,12 +41,18 @@ OuterFaceNormals, OuterFaceAreas, OuterVertexNormals, OuterVertexAreas = GraphUt
 outDF = pandas.DataFrame(columns = ['StructName', 'LGI', 'SurfArea', 'OuterSurfArea'])
 outDF.StructName = Annot['colortable']['struct_names']
 
+print("outDF after initialization and calling Annot colortable struct names")
+print(outDF)
+
 outDF = outDF[outDF.StructName != 'ctx-' + Hemi + '-unknown']
 outDF = outDF[outDF.StructName != 'unknown']
 
+print("outDF after replacement")
+print(outDF)
+
 pd = pandas.DataFrame(columns = outDF.columns)
 pd['StructName'] = pandas.Series('Global')
-print(pd)
+#print(pd)
 pd = dict.fromkeys(outDF.columns.names, numpy.nan)
 
 outDF = outDF.append(pd, ignore_index = True)
