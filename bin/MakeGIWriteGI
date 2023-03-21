@@ -76,7 +76,15 @@ print("structsAndLabels?")
 print(structsAndLabels)
 
 for curStructIDX in outDF.index:
+    print("curStructIDX")
+    print(curStructIDX)
     curStructName = outDF.loc[curStructIDX, 'StructName']
+    print("curStructName")
+    print(curStructName)
+    print("Annot['label']")
+    print(Annot['label'])
+    print("structsAndLabels.loc[curStructName]")
+    print(structsAndLabels.loc[curStructName])
     I = numpy.where(Annot['label'] == structsAndLabels.loc[curStructName])[0]
 
     outDF.loc[curStructIDX, 'SurfArea'] = numpy.sum(PialVertexAreas[I])
