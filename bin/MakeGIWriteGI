@@ -30,9 +30,6 @@ OuterSurf = VTPUtils.readVTPSurf(os.path.join(inDir, 'meshes', 'correspondence-'
 AnnotFileName = os.path.join(SubjectsDir, subjID, 'label', Hemi + "." + Atlas + ".annot")
 Annot = freesurfer.readAnnot(AnnotFileName)
 
-print("Annot:")
-print(Annot)
-
 CortexLabel = freesurfer.readLabel(os.path.join(SubjectsDir, subjID, 'label', Hemi + ".cortex.label"))
 
 PialFaceNormals, PialFaceAreas, PialVertexNormals, PialVertexAreas = GraphUtils.surfaceAreasNormals(PialSurf)
@@ -41,59 +38,27 @@ OuterFaceNormals, OuterFaceAreas, OuterVertexNormals, OuterVertexAreas = GraphUt
 outDF = pandas.DataFrame(columns = ['StructName', 'LGI', 'SurfArea', 'OuterSurfArea'])
 outDF.StructName = Annot['colortable']['struct_names']
 
-print("outDF after initialization and calling Annot colortable struct names")
-print(outDF)
-
 outDF = outDF[outDF.StructName != 'ctx-' + Hemi + '-unknown']
 outDF = outDF[outDF.StructName != 'unknown']
 
-print("outDF after replacement")
-print(outDF)
-
 pd = pandas.DataFrame(columns = outDF.columns)
-print("Columns of outDF")
-print(outDF.columns)
-print("pd initial")
-print(pd)
-pd['StructName'] = pandas.Series('Global')
-print("pd after reassignment of structname to global")
-print(pd)
-pd = dict.fromkeys(outDF.columns.values, numpy.nan)
-print("names of outDF columns?")
-print(outDF.columns.names)
 
-print("pd after initialization, assignment, and conversion")
-print(pd)
+pd['StructName'] = pandas.Series('Global')
+
+pd = dict.fromkeys(outDF.columns.values, numpy.nan)
 
 outDF = outDF.append(pd, ignore_index = True)
 outDF.loc[35, 'StructName'] = 'Global'
 
-print("outDF with pd appended (the < error line)")
-print(outDF)
-
 structsAndLabels = pandas.Series(index = Annot['colortable']['struct_names'], data = Annot['colortable']['labels'])
 
-print("structsAndLabels?")
-print(structsAndLabels)
-
 for curStructIDX in list(range(35)):
-    print("curStructIDX")
-    print(curStructIDX)
     curStructName = outDF.loc[curStructIDX, 'StructName']
-    print("curStructName")
-    print(curStructName)
-    print("Annot['label']")
-    print(Annot['label'])
-    print("structsAndLabels.loc[curStructName]")
-    print(structsAndLabels.loc[curStructName])
     I = numpy.where(Annot['label'] == structsAndLabels.loc[curStructName])[0]
 
     outDF.loc[curStructIDX, 'SurfArea'] = numpy.sum(PialVertexAreas[I])
     outDF.loc[curStructIDX, 'OuterSurfArea'] = numpy.sum(OuterVertexAreas[I])
     outDF.loc[curStructIDX, 'LGI'] = outDF.loc[curStructIDX, 'SurfArea'] / outDF.loc[curStructIDX, 'OuterSurfArea']
-    
-print("Cortex Label")
-print(CortexLabel)
 
 outDF.loc['Global', 'SurfArea'] = numpy.sum(PialVertexAreas[CortexLabel['index']])
 outDF.loc['Global', 'OuterSurfArea'] = numpy.sum(OuterVertexAreas[CortexLabel['index']])
