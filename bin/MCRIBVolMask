@@ -8,14 +8,23 @@ fi
 
 SUBJID=$1
 
+MCRIB_BIN=$(dirname $0)
 export SUBJECTS_DIR=`pwd`/freesurfer
-cd $SUBJECTS_DIR/$SUBJID/mri
+SUBJ_MRI_DIR=$SUBJECTS_DIR/$SUBJID/mri
+mkdir -p $SUBJ_MRI_DIR
+cd $SUBJ_MRI_DIR
 
-if [ -f "aseg.presurf.preunwmfix.mgz" ]
-then
+if [ -f "aseg.presurf.preunwmfix.mgz" ]; then
 	ASEGFILE=aseg.presurf.preunwmfix
-else
+elif [ -f "aseg.presurf.mgz" ]; then
 	ASEGFILE=aseg.presurf
+else
+    # Create ASEG
+    echo "No aseg found, creating..."
+    ASEGFILE=aseg.presurf.preunwmfix
+    SEGFILE="../../../TissueSeg/${SUBJID}_all_labels_manedit.nii.gz"
+    $MCRIB_BIN/DrawEMToFreesurferLabels $SEGFILE $ASEGFILE.mgz
+    echo "Successfully created aseg"
 fi
 
 if [ ! -f "${ASEGFILE}.mgz" ]
@@ -46,5 +55,5 @@ fi
 if [ "$ASEGFILE" == "aseg.presurf.preunwmfix" ]
 then
 	echo "Running DrawEM fix"
-	ASEGDilateUnmWMFix $ASEGFILE.mgz ribbon.mgz aseg.presurf.mgz
+	$MCRIB_BIN/../VTK/VTK-install/bin/vtkpython $MCRIB_BIN/ASEGDilateUnmWMFix $ASEGFILE.mgz ribbon.mgz aseg.presurf.mgz
 fi
