@@ -67,18 +67,18 @@ CTABTable.index.name = 'SegId'
 CTABTable = CTABTable.loc[CTABTable.index > 0]
 
 ASEGNII = nibabel.load(ASEGFileName)
-ASEGIMG = ASEGNII.get_data()
+ASEGIMG = numpy.asanyarray(ASEGNII.dataobj)
 
 voxelSize = numpy.prod(ASEGNII.header.get_zooms())
 
 T2NII = nibabel.load(T2IMGFileName)
-T2IMG = T2NII.get_data()
+T2IMG = numpy.asanyarray(T2NII.dataobj)
 
 RibbonNII = nibabel.load(RibbonIMGFileName)
-RibbonIMG = RibbonNII.get_data()
+RibbonIMG = numpy.asanyarray(RibbonNII.dataobj)
 
 BrainmaskNII = nibabel.load(BrainmaskIMGFileName)
-BrainmaskIMG = BrainmaskNII.get_data()
+BrainmaskIMG = numpy.asanyarray(BrainmaskNII.dataobj)
 
 doingLabelTable = False
 
