@@ -30,8 +30,8 @@ if not os.path.isfile(DrawEMLabelsFileName):
 ASEGNII = nibabel.load(ASEGFileName)
 DrawEMLabelsNII = nibabel.load(DrawEMLabelsFileName)
 
-ASEGIMG = ASEGNII.get_data()
-DrawEMLabelsIMG = DrawEMLabelsNII.get_data()
+ASEGIMG = numpy.asanyarray(ASEGNII.dataobj)
+DrawEMLabelsIMG = numpy.asanyarray(DrawEMLabelsNII.dataobj)
 
 NewASEGIMG = numpy.array(ASEGIMG)
 

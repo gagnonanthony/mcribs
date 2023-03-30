@@ -57,3 +57,27 @@ then
 	echo "Running DrawEM fix"
 	$MCRIB_BIN/../VTK/VTK-install/bin/vtkpython $MCRIB_BIN/ASEGDilateUnmWMFix $ASEGFILE.mgz ribbon.mgz aseg.presurf.mgz
 fi
+
+if [ ! -f "T2.mgz" ]; then
+    echo "Creating missing FreeSurfer T2"
+    # T2w.mgz  was not created by MCRIBTissueSegDrawEM
+    mri_convert ../../../RawT2RadiologicalIsotropic/${SUBJID}.nii.gz T2.mgz
+    if [ ! -f orig.mgz ]; then
+        ln -sf T2.mgz orig.mgz
+    fi
+
+    if [ ! -f brain.mgz ]; then
+        ln -sf T2.mgz brain.mgz
+    fi
+fi
+
+if [ ! -f "norm.mgz" ]; then
+    echo "Creating missing FreeSurfer norm"
+    mri_convert ../../../TissueSegDrawEM/$SUBJID/N4/${SUBJID}.nii.gz norm.mgz
+fi
+
+if [ ! -f "brainmask.mgz" ]; then
+    echo "Creating missing FreeSurfer brainmask"
+    # brainmask.mgz was not created by MCRIBSTissueSegDrawEM
+    mri_mask T2.mgz ../../../TissueSeg/${SUBJID}_brain_mask.nii.gz brainmask.mgz
+fi
