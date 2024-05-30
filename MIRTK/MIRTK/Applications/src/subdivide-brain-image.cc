@@ -34,6 +34,10 @@
 #include "mirtk/LinearInterpolateImageFunction.h"
 #include "mirtk/EuclideanDistanceTransform.h"
 
+#include <vector>
+#include <queue>
+#include <unordered_set>
+
 using namespace mirtk;
 
 
@@ -297,42 +301,123 @@ void InitializeSelectionLUT(const UnorderedSet<int> &labels, bool selected[NUM])
   for (auto label : labels) selected[label] = true;
 }
 
-// -----------------------------------------------------------------------------
-/// Get set of boundary voxel
-void AddBoundaryPoints(PointSet                &points,
-                       const ByteImage         &regions,
-                       const UnorderedSet<int> &region1,
-                       const UnorderedSet<int> &region2,
-                       bool wc = true)
-{
-  Point p;
-  bool selection1[NUM], selection2[NUM], boundary;
-  InitializeSelectionLUT(region1, selection1);
-  InitializeSelectionLUT(region2, selection2);
-  for (int k = 0; k < regions.Z(); ++k)
-  for (int j = 0; j < regions.Y(); ++j)
-  for (int i = 0; i < regions.X(); ++i) {
-    if (selection1[regions(i, j, k)]) {
-      boundary = false;
-      for (int nk = k-1; nk <= k+1; ++nk) {
-        if (nk < 0 || nk >= regions.Z()) continue;
-        for (int nj = j-1; nj <= j+1; ++nj) {
-          if (nj < 0 || nj >= regions.Y()) continue;
-          for (int ni = i-1; ni <= i+1; ++ni) {
-            if (ni < 0 || ni >= regions.X()) continue;
-            if (selection2[regions(ni, nj, nk)]) {
-              boundary = true;
-              break;
+void DilateBinaryMask(const ByteImage &input, ByteImage &output) {
+  int dx[6] = {1, -1, 0, 0, 0, 0};
+  int dy[6] = {0, 0, 1, -1, 0, 0};
+  int dz[6] = {0, 0, 0, 0, 1, -1};
+  
+  output = ByteImage(input.X(), input.Y(), input.Z(), 0);
+
+  for (int k = 0; k < input.Z(); ++k) {
+    for (int j = 0; j < input.Y(); ++j) {
+      for (int i = 0; i < input.X(); ++i) {
+        if (input(i, j, k)) {
+          for (int d = 0; d < 6; ++d) {
+            int ni = i + dx[d];
+            int nj = j + dy[d];
+            int nk = k + dz[d];
+            if (ni >= 0 && ni < input.X() && nj >= 0 && nj < input.Y() && nk >= 0 && nk < input.Z()) {
+              output(ni, nj, nk) = 1;
             }
           }
-          if (boundary) break;
         }
-        if (boundary) break;
       }
-      if (boundary) {
-        p = Point(i, j, k);
-        if (wc) regions.ImageToWorld(p);
-        points.Add(p);
+    }
+  }
+}
+
+void FindLargestContiguousComponent(const ByteImage &input, ByteImage &output) {
+  int dx[6] = {1, -1, 0, 0, 0, 0};
+  int dy[6] = {0, 0, 1, -1, 0, 0};
+  int dz[6] = {0, 0, 0, 0, 1, -1};
+  
+  int X = input.X(), Y = input.Y(), Z = input.Z();
+  output = ByteImage(X, Y, Z, 0);
+
+  ByteImage visited(X, Y, Z, 0);
+  int max_size = 0;
+  std::vector<Point> max_component;
+  
+  for (int k = 0; k < Z; ++k) {
+    for (int j = 0; j < Y; ++j) {
+      for (int i = 0; i < X; ++i) {
+        if (input(i, j, k) && !visited(i, j, k)) {
+          // Perform BFS to find the size of this component
+          std::queue<Point> q;
+          std::vector<Point> component;
+          q.push(Point(i, j, k));
+          visited(i, j, k) = 1;
+
+          while (!q.empty()) {
+            Point p = q.front();
+            q.pop();
+            component.push_back(p);
+
+            for (int d = 0; d < 6; ++d) {
+              int ni = p.x + dx[d];
+              int nj = p.y + dy[d];
+              int nk = p.z + dz[d];
+              if (ni >= 0 && ni < X && nj >= 0 && nj < Y && nk >= 0 && nk < Z) {
+                if (input(ni, nj, nk) && !visited(ni, nj, nk)) {
+                  q.push(Point(ni, nj, nk));
+                  visited(ni, nj, nk) = 1;
+                }
+              }
+            }
+          }
+
+          if (component.size() > max_size) {
+            max_size = component.size();
+            max_component = component;
+          }
+        }
+      }
+    }
+  }
+
+  // Mark the largest component in the output
+  for (const Point &p : max_component) {
+    output(p.x, p.y, p.z) = 1;
+  }
+}
+
+void AddBoundaryPoints(PointSet &points,
+                       const ByteImage &regions,
+                       const UnorderedSet<int> &region1,
+                       const UnorderedSet<int> &region2,
+                       bool wc = true) {
+  ByteImage selection1(regions.X(), regions.Y(), regions.Z(), 0);
+  ByteImage selection2(regions.X(), regions.Y(), regions.Z(), 0);
+  ByteImage dilated1, dilated2, intersection, largest_component;
+
+  InitializeSelectionLUT(region1, selection1);
+  InitializeSelectionLUT(region2, selection2);
+
+  DilateBinaryMask(selection1, dilated1);
+  DilateBinaryMask(selection2, dilated2);
+
+  // Compute intersection
+  intersection = ByteImage(regions.X(), regions.Y(), regions.Z(), 0);
+  for (int k = 0; k < regions.Z(); ++k) {
+    for (int j = 0; j < regions.Y(); ++j) {
+      for (int i = 0; i < regions.X(); ++i) {
+        if (dilated1(i, j, k) && dilated2(i, j, k)) {
+          intersection(i, j, k) = 1;
+        }
+      }
+    }
+  }
+
+  FindLargestContiguousComponent(intersection, largest_component);
+
+  for (int k = 0; k < regions.Z(); ++k) {
+    for (int j = 0; j < regions.Y(); ++j) {
+      for (int i = 0; i < regions.X(); ++i) {
+        if (largest_component(i, j, k)) {
+          Point p = Point(i, j, k);
+          if (wc) regions.ImageToWorld(p);
+          points.Add(p);
+        }
       }
     }
   }
