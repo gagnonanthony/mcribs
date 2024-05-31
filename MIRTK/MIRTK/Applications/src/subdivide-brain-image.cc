@@ -34,10 +34,8 @@
 #include "mirtk/LinearInterpolateImageFunction.h"
 #include "mirtk/EuclideanDistanceTransform.h"
 
-#include <queue>
-#include <vector>
 #include <unordered_set>
-#include <algorithm>
+#include <queue>
 
 using namespace mirtk;
 
@@ -302,101 +300,112 @@ void InitializeSelectionLUT(const UnorderedSet<int> &labels, bool selected[NUM])
   for (auto label : labels) selected[label] = true;
 }
 
-// Utility functions to dilate voxel masks
-void DilateMask(const ByteImage &regions, const bool mask[NUM], bool dilated_mask[NUM]) {
-  for (int i = 0; i < NUM; ++i) dilated_mask[i] = false;
-  for (int k = 0; k < regions.Z(); ++k)
-  for (int j = 0; j < regions.Y(); ++j)
-  for (int i = 0; i < regions.X(); ++i) {
-    if (mask[regions(i, j, k)]) {
-      for (int nk = k-1; nk <= k+1; ++nk) {
-        if (nk < 0 || nk >= regions.Z()) continue;
-        for (int nj = j-1; nj <= j+1; ++nj) {
-          if (nj < 0 || nj >= regions.Y()) continue;
-          for (int ni = i-1; ni <= i+1; ++ni) {
-            if (ni < 0 || ni >= regions.X()) continue;
-            if (abs(nk - k) + abs(nj - j) + abs(ni - i) == 1) { // 6-connected neighborhood
-              dilated_mask[regions(ni, nj, nk)] = true;
-            }
-          }
-        }
-      }
-    }
+// Define a hash function for Point
+struct PointHash {
+  std::size_t operator()(const Point &p) const {
+    return std::hash<int>()(p._x) ^ std::hash<int>()(p._y) ^ std::hash<int>()(p._z);
   }
-}
+};
 
-// Utility functions to find the largest connected component
-std::vector<Point> FindLargestConnectedComponent(const ByteImage &regions, const bool mask[NUM]) {
-  std::vector<Point> largest_component;
-  std::vector<std::vector<std::vector<bool>>> visited(regions.X(), std::vector<std::vector<bool>>(regions.Y(), std::vector<bool>(regions.Z(), false)));
-
-  for (int k = 0; k < regions.Z(); ++k)
-  for (int j = 0; j < regions.Y(); ++j)
-  for (int i = 0; i < regions.X(); ++i) {
-    if (mask[regions(i, j, k)] && !visited[i][j][k]) {
-      std::vector<Point> current_component;
-      std::queue<Point> q;
-      q.push(Point(i, j, k));
-      visited[i][j][k] = true;
-
-      while (!q.empty()) {
-        Point p = q.front();
-        q.pop();
-        current_component.push_back(p);
-
-        for (int nk = p._z-1; nk <= p._z+1; ++nk) {
-          if (nk < 0 || nk >= regions.Z()) continue;
-          for (int nj = p._y-1; nj <= p._y+1; ++nj) {
-            if (nj < 0 || nj >= regions.Y()) continue;
-            for (int ni = p._x-1; ni <= p._x+1; ++ni) {
-              if (ni < 0 || ni >= regions.X()) continue;
-              if (abs(nk - p._z) + abs(nj - p._y) + abs(ni - p._x) == 1) { // 6-connected neighborhood
-                if (mask[regions(ni, nj, nk)] && !visited[ni][nj][nk]) {
-                  visited[ni][nj][nk] = true;
-                  q.push(Point(ni, nj, nk));
-                }
-              }
-            }
-          }
-        }
-      }
-
-      if (current_component.size() > largest_component.size()) {
-        largest_component = current_component;
-      }
-    }
-  }
-  return largest_component;
-}
-
-// Main function to add boundary points
+/// Get set of boundary voxel
 void AddBoundaryPoints(PointSet                &points,
                        const ByteImage         &regions,
                        const UnorderedSet<int> &region1,
                        const UnorderedSet<int> &region2,
                        bool wc = true)
 {
-  bool selection1[NUM], selection2[NUM];
-  bool dilated_selection1[NUM], dilated_selection2[NUM];
+  Point p;
+  bool selection1[NUM], selection2[NUM], boundary;
   InitializeSelectionLUT(region1, selection1);
   InitializeSelectionLUT(region2, selection2);
 
-  DilateMask(regions, selection1, dilated_selection1);
-  DilateMask(regions, selection2, dilated_selection2);
+  // Keep track of points added to avoid duplicates
+  std::unordered_set<Point, PointHash> addedPoints;
 
-  bool intersection[NUM];
-  for (int i = 0; i < NUM; ++i) {
-    intersection[i] = dilated_selection1[i] && dilated_selection2[i];
-  }
-
-  std::vector<Point> boundary_points = FindLargestConnectedComponent(regions, intersection);
-
-  for (const Point &p : boundary_points) {
-    Point world_p = p;
-    if (wc) regions.ImageToWorld(world_p);
-    points.Add(world_p);
+  for (int k = 0; k < regions.Z(); ++k)
+  for (int j = 0; j < regions.Y(); ++j)
+  for (int i = 0; i < regions.X(); ++i) {
+    if (selection1[regions(i, j, k)]) {
+      boundary = false;
+      for (int dk = -2; dk <= 2; ++dk) {
+        int nk = k + dk;
+        if (nk < 0 || nk >= regions.Z()) continue;
+        for (int dj = -2; dj <= 2; ++dj) {
+          int nj = j + dj;
+          if (nj < 0 || nj >= regions.Y()) continue;
+          for (int di = -2; di <= 2; ++di) {
+            int ni = i + di;
+            if (ni < 0 || ni >= regions.X()) continue;
+            if (selection2[regions(ni, nj, nk)]) {
+              boundary = true;
+              // Add intermediate points
+              for (int interp = 0; interp <= 2; ++interp) {
+                int interp_i = i + interp * di / 2;
+                int interp_j = j + interp * dj / 2;
+                int interp_k = k + interp * dk / 2;
+                p = Point(interp_i, interp_j, interp_k);
+                if (wc) regions.ImageToWorld(p);
+                if (addedPoints.insert(p).second) {
+                  points.Add(p);
+                }
+              }
+              break;
+            }
+          }
+          if (boundary) break;
+        }
+        if (boundary) break;
+      }
+    }
   }
 }
+
+// Function to find the largest contiguous component in the PointSet
+PointSet GetLargestComponent(const PointSet &inputPoints)
+{
+  PointSet largestComponent;
+  std::unordered_set<Point, PointHash> visited;
+  std::vector<PointSet> components;
+
+  std::vector<std::vector<int>> neighbors = {{1, 0, 0}, {-1, 0, 0}, {0, 1, 0}, {0, -1, 0}, {0, 0, 1}, {0, 0, -1}};
+
+  for (const auto &point : inputPoints) {
+    if (visited.find(point) == visited.end()) {
+      PointSet currentComponent;
+      std::queue<Point> queue;
+      queue.push(point);
+      visited.insert(point);
+
+      while (!queue.empty()) {
+        Point p = queue.front();
+        queue.pop();
+        currentComponent.Add(p);
+
+        // Check face-sharing neighbors
+        for (const auto &n : neighbors) {
+          Point neighbor(p._x + n[0], p._y + n[1], p._z + n[2]);
+          if (inputPoints.Contains(neighbor) && visited.insert(neighbor).second) {
+            queue.push(neighbor);
+          }
+        }
+      }
+
+      components.push_back(currentComponent);
+    }
+  }
+
+  // Find the largest component
+  size_t maxSize = 0;
+  for (const auto &component : components) {
+    if (component.Size() > maxSize) {
+      maxSize = component.Size();
+      largestComponent = component;
+    }
+  }
+
+  return largestComponent;
+}
+
 
 // -----------------------------------------------------------------------------
 /// Get set of boundary points
