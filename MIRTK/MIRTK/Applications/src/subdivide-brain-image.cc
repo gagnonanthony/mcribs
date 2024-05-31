@@ -294,6 +294,8 @@ bool Contains(const ByteImage &regions, BrainRegion region)
   return false;
 }
 
+// -----------------------------------------------------------------------------
+/// Initialize boolean array of whether or not a brain region is selected given set
 void InitializeSelectionLUT(const UnorderedSet<int> &labels, bool selected[NUM])
 {
   for (int i = 0; i < NUM; ++i) selected[i] = false;
@@ -513,7 +515,7 @@ ByteImage Cut(const ByteImage &regions, const Plane &plane, double r)
 
   attr._xorigin = plane.c._x;
   attr._yorigin = plane.c._y;
-  attr.origin = plane.c.;
+  attr._zorigin = plane.c._z;
 
   attr._xaxis[0] = e1._x;
   attr._xaxis[1] = e1._y;
