@@ -307,6 +307,16 @@ struct PointHash {
   }
 };
 
+// Helper function to check if a PointSet contains a given point
+bool PointSetContains(const PointSet &points, const Point &point) {
+  for (size_t i = 0; i < points.Size(); ++i) {
+    if (points.GetPoint(i) == point) {
+      return true;
+    }
+  }
+  return false;
+}
+
 /// Get set of boundary voxel
 void AddBoundaryPoints(PointSet                &points,
                        const ByteImage         &regions,
@@ -369,7 +379,8 @@ PointSet GetLargestComponent(const PointSet &inputPoints)
 
   std::vector<std::vector<int>> neighbors = {{1, 0, 0}, {-1, 0, 0}, {0, 1, 0}, {0, -1, 0}, {0, 0, 1}, {0, 0, -1}};
 
-  for (const auto &point : inputPoints) {
+  for (size_t idx = 0; idx < inputPoints.Size(); ++idx) {
+    Point point = inputPoints.GetPoint(idx);
     if (visited.find(point) == visited.end()) {
       PointSet currentComponent;
       std::queue<Point> queue;
@@ -384,7 +395,7 @@ PointSet GetLargestComponent(const PointSet &inputPoints)
         // Check face-sharing neighbors
         for (const auto &n : neighbors) {
           Point neighbor(p._x + n[0], p._y + n[1], p._z + n[2]);
-          if (inputPoints.Contains(neighbor) && visited.insert(neighbor).second) {
+          if (PointSetContains(inputPoints, neighbor) && visited.insert(neighbor).second) {
             queue.push(neighbor);
           }
         }
@@ -405,7 +416,6 @@ PointSet GetLargestComponent(const PointSet &inputPoints)
 
   return largestComponent;
 }
-
 
 // -----------------------------------------------------------------------------
 /// Get set of boundary points
