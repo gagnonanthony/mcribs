@@ -328,7 +328,6 @@ void AddBoundaryPoints(PointSet                &points,
   bool selection1[NUM], selection2[NUM], boundary;
   InitializeSelectionLUT(region1, selection1);
   InitializeSelectionLUT(region2, selection2);
-
   // Keep track of points added to avoid duplicates
   std::unordered_set<Point, PointHash> addedPoints;
 
@@ -346,14 +345,21 @@ void AddBoundaryPoints(PointSet                &points,
           for (int di = -2; di <= 2; ++di) {
             int ni = i + di;
             if (ni < 0 || ni >= regions.X()) continue;
-            if (selection2[regions(ni, nj, nk)]) {
+            if ((abs(di) + abs(dj) + abs(dk) <= 2) && selection2[regions(ni, nj, nk)]) {
               boundary = true;
-              // Add intermediate points
-              for (int interp = 0; interp <= 2; ++interp) {
-                int interp_i = i + interp * di / 2;
-                int interp_j = j + interp * dj / 2;
-                int interp_k = k + interp * dk / 2;
-                p = Point(interp_i, interp_j, interp_k);
+              // Add the specified points
+              std::vector<Point> pointsToAdd = {
+                Point(i, j, k),
+                Point(i + di, j, k),
+                Point(i, j + dj, k),
+                Point(i, j, k + dk),
+                Point(i + di / 2, j, k),
+                Point(i, j + dj / 2, k),
+                Point(i, j, k + dk / 2),
+                Point(i + di, j + dj, k + dk)
+              };
+
+              for (auto &p : pointsToAdd) {
                 if (wc) regions.ImageToWorld(p);
                 if (addedPoints.insert(p).second) {
                   points.Add(p);
